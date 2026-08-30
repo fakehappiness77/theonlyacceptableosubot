@@ -8,10 +8,8 @@ from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes
 from dotenv import load_dotenv
 
-# Загрузка переменных окружения
 load_dotenv()
 
-# Конфигурация
 TOKEN = os.getenv('TELEGRAM_TOKEN')
 OSU_CLIENT_ID = os.getenv('OSU_CLIENT_ID')
 OSU_CLIENT_SECRET = os.getenv('OSU_CLIENT_SECRET')
@@ -19,22 +17,17 @@ OSU_API_URL = 'https://osu.ppy.sh/api/v2'
 OSU_TOKEN_URL = 'https://osu.ppy.sh/oauth/token'
 
 def get_beatmap_data(score_data):
-    """Извлекает данные карты из скора, пробуя разные варианты"""
-    # Пробуем получить beatmap
     beatmap = score_data.get('beatmap', {})
     
-    # Пробуем разные поля для artist
     artist = None
     title = None
     version = None
-    
-    # 1. Из beatmap
+
     if beatmap:
         artist = beatmap.get('artist')
         title = beatmap.get('title')
         version = beatmap.get('version')
-    
-    # 2. Из beatmapset (если есть)
+
     if not artist or not title:
         beatmapset = score_data.get('beatmapset', {})
         if beatmapset:
@@ -43,7 +36,7 @@ def get_beatmap_data(score_data):
             if not title:
                 title = beatmapset.get('title')
     
-    # 3. Из самого скора
+  
     if not artist:
         artist = score_data.get('artist')
     if not title:
@@ -51,7 +44,7 @@ def get_beatmap_data(score_data):
     if not version:
         version = score_data.get('version')
     
-    # 4. Из вложенных полей в скоре
+   
     if not artist or not title:
         for key, value in score_data.items():
             if isinstance(value, dict):
@@ -62,7 +55,7 @@ def get_beatmap_data(score_data):
                 if 'version' in value and not version:
                     version = value.get('version')
     
-    # 5. Если все еще нет, используем значения по умолчанию
+
     if not artist:
         artist = 'Unknown Artist'
     if not title:
@@ -223,10 +216,9 @@ class OsuApiV2:
             return 'N/A'
         return f'{int(pp):,}'.replace(',', ',')
 
-# Создаем экземпляр API
 osu_api = OsuApiV2(OSU_CLIENT_ID, OSU_CLIENT_SECRET)
 
-# Обработчики команд
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     welcome_text = (
         "*Добро пожаловать в osu! Profile Bot!*\n\n"
@@ -314,12 +306,9 @@ async def top(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         for idx, score in enumerate(best_scores[:10], 1):
             try:
-                # Используем универсальную функцию для получения данных
                 artist, title, version = get_beatmap_data(score)
-                
-                # Формируем название
+               
                 song_name = f"{artist} - {title} [{version}]"
-                # Экранируем только открывающую скобку
                 song_name = song_name.replace('[', '\\[')
                 
                 pp = score.get('pp', 0)
@@ -375,13 +364,11 @@ async def recent(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 parse_mode='Markdown'
             )
             return
-
-        # Используем универсальную функцию для получения данных
-        artist, title, version = get_beatmap_data(recent_score)
         
-        # Формируем название
+        artist, title, version = get_beatmap_data(recent_score)
+ 
         song_name = f"{artist} - {title} [{version}]"
-        # Экранируем только открывающую скобку
+  
         song_name = song_name.replace('[', '\\[')
         
         accuracy = recent_score.get('accuracy', 0) * 100
@@ -496,7 +483,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 def main():
-    """Главная функция"""
+
     if not TOKEN:
         print("❌ Ошибка: TELEGRAM_TOKEN не найден в .env файле")
         return
@@ -507,10 +494,8 @@ def main():
 
     print("🚀 Бот запущен!")
     
-    # Создаем приложение
     application = Application.builder().token(TOKEN).build()
 
-    # Регистрируем обработчики
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("help", help_command))
     application.add_handler(CommandHandler("profile", profile))
@@ -518,7 +503,6 @@ def main():
     application.add_handler(CommandHandler("recent", recent))
     application.add_handler(CommandHandler("compare", compare))
 
-    # Запускаем бота
     application.run_polling()
 
 if __name__ == '__main__':
